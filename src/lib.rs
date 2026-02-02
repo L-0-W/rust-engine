@@ -1,20 +1,18 @@
+mod math;
+
 use std::sync::Arc;
 
 use winit::{
-    application::ApplicationHandler, 
-    event::*, event_loop::{ActiveEventLoop, EventLoop}, 
-    window::Window,
-    keyboard::{KeyCode, PhysicalKey}
+    application::ApplicationHandler, dpi::PhysicalPosition, event::*, event_loop::{ActiveEventLoop, EventLoop}, keyboard::{KeyCode, PhysicalKey}, window::Window
 };
-
-
 pub struct State {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
-    window: Arc<Window>
+    window: Arc<Window>,
+    clear_color: wgpu::Color
 }
 
 pub struct App {
@@ -32,9 +30,7 @@ impl App {
 
 impl ApplicationHandler<State> for App  {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        
-        println!("Creating new window..");
-        
+                
         #[allow(unused_mut)]
         let mut window_attributes = Window::default_attributes();
 
@@ -86,6 +82,7 @@ impl ApplicationHandler<State> for App  {
                     },
                 ..
             } => state.handle_key(event_loop, code, key_state.is_pressed()),
+            WindowEvent::CursorMoved { device_id, position } => {state.handle_mouse_move(device_id, position)},
             _ => {}
         }
     }
@@ -112,8 +109,6 @@ impl State {
             })
             .await?;
         
-
-        println!("{}", adapter.features());
 
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
             label: None,
@@ -151,8 +146,9 @@ impl State {
             device,
             queue,
             config,
-            is_surface_configured: false, 
-            window 
+            is_surface_configured: false,
+            clear_color: wgpu::Color { r: 0.1, g: 0.3, b: 0.2, a: 1.0 }, 
+            window
         })
     }
 
@@ -172,6 +168,16 @@ impl State {
             (KeyCode::Escape, true) => event_loop.exit(),
             _ => {}
         }
+    }
+
+    fn handle_mouse_move(&mut self, _device_id: DeviceId, position: PhysicalPosition<f64>) {
+        let size = self.window.inner_size();
+
+       let (pos_x, pos_y) = math::normalize(position.x, position.y, size.width, size.height);
+
+        self.clear_color.r = pos_x;
+        self.clear_color.g = pos_y;
+
     }
 
     fn update(&mut self) {
@@ -200,12 +206,7 @@ impl State {
                         resolve_target: None,
                         depth_slice: None,
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 0.1,
-                                g: 0.2,
-                                b: 0.3,
-                                a: 1.0,
-                            }),
+                            load: wgpu::LoadOp::Clear(self.clear_color),
                             store: wgpu::StoreOp::Store,
                         },
                     })],
