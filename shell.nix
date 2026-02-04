@@ -20,6 +20,7 @@ pkgs.mkShell {
     xorg.libXrandr
   ];
 
+
   # Define a variável de ambiente para que o driver de vídeo seja encontrado
   shellHook = ''
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${
@@ -29,6 +30,7 @@ pkgs.mkShell {
         wayland
       ])
     }"
-    echo "Ambiente Bevy pronto! Use 'cargo run --example <nome_do_exemplo>'"
+    echo "Preparado para rodar WGPU"
   '';
+
 }
